@@ -1,0 +1,30 @@
+# Credentials and secrets
+config/credentials.py
+*.env
+.env
+
+# Database files
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
