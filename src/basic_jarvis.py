@@ -9,6 +9,15 @@ from datetime import datetime
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from config.credentials import CLAUDE_API_KEY
 
+# Import modules with correct paths
+try:
+    from calendar_export import CalendarExporter
+    from schedule_manager import ScheduleManager
+except ImportError:
+    # If running from parent directory
+    from src.calendar_export import CalendarExporter
+    from src.schedule_manager import ScheduleManager
+
 class BasicJarvis:
     """
     Your first AI assistant with basic intelligence
@@ -175,9 +184,11 @@ def main():
         print("1. Analyze a task")
         print("2. Create a schedule")
         print("3. Daily check-in")
-        print("4. Quit")
+        print("4. Advanced scheduling")
+        print("5. Manage saved schedules")
+        print("6. Quit")
         
-        choice = input("\nEnter your choice (1-4): ").strip()
+        choice = input("\nEnter your choice (1-6): ").strip()
         
         if choice == "1":
             task = input("\n📝 What task would you like analyzed? ")
@@ -209,6 +220,48 @@ def main():
                     for item in result.get('schedule', []):
                         print(f"{item.get('time')}: {item.get('task')} ({item.get('duration')})")
                     print(f"\nTotal time: {result.get('total_time')}")
+                    
+                    # Auto-save the schedule
+                    try:
+                        schedule_manager = ScheduleManager()
+                        schedule_name = f"Schedule {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+                        schedule_manager.save_schedule(result, schedule_name)
+                    except Exception as e:
+                        print(f"⚠️  Could not save schedule: {str(e)}")
+                    
+                    # Add export options
+                    print("\n📤 EXPORT OPTIONS:")
+                    print("1. Save to calendar file (.ics) - Import into Outlook/Google/Apple Calendar")
+                    print("2. Create HTML schedule - View in browser or print")
+                    print("3. Generate email format - Copy/paste friendly")
+                    print("4. Skip export")
+                    
+                    export_choice = input("\nChoose export option (1-4): ").strip()
+                    
+                    if export_choice in ['1', '2', '3']:
+                        try:
+                            exporter = CalendarExporter()
+                            
+                            if export_choice == '1':
+                                ics_file = exporter.create_ics_file(result)
+                                print(f"✅ Calendar file saved: {ics_file}")
+                                print("📁 To import: Open file or drag into your calendar app")
+                                
+                            elif export_choice == '2':
+                                html_file = exporter.create_html_schedule(result)
+                                print(f"✅ HTML schedule saved: {html_file}")
+                                print("🌐 Open in browser to view/print")
+                                
+                            elif export_choice == '3':
+                                email_text = exporter.create_email_format(result)
+                                print("\n📧 EMAIL FORMAT:")
+                                print("=" * 50)
+                                print(email_text)
+                                print("=" * 50)
+                                print("✅ Copy the text above to paste into email/notes")
+                                
+                        except Exception as e:
+                            print(f"❌ Error exporting schedule: {str(e)}")
         
         elif choice == "3":
             result = jarvis.daily_check_in()
@@ -222,6 +275,32 @@ def main():
                 print(f"Encouragement: {result.get('encouragement')}")
         
         elif choice == "4":
+            try:
+                from advanced_scheduler import main as advanced_main
+                advanced_main()
+            except ImportError:
+                try:
+                    from src.advanced_scheduler import main as advanced_main
+                    advanced_main()
+                except ImportError:
+                    print("❌ Advanced scheduler not available. Make sure advanced_scheduler.py is in the src folder.")
+            except Exception as e:
+                print(f"❌ Error loading advanced scheduler: {str(e)}")
+        
+        elif choice == "5":
+            try:
+                from schedule_manager import schedule_management_menu
+                schedule_management_menu()
+            except ImportError:
+                try:
+                    from src.schedule_manager import schedule_management_menu
+                    schedule_management_menu()
+                except ImportError:
+                    print("❌ Schedule manager not available. Make sure schedule_manager.py is in the src folder.")
+            except Exception as e:
+                print(f"❌ Error loading schedule manager: {str(e)}")
+        
+        elif choice == "6":
             print("\n👋 Goodbye! Jarvis is shutting down.")
             break
         
