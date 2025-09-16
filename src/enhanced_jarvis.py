@@ -1,716 +1,677 @@
-# Enhanced Jarvis - Advanced AI Intelligence
+# Complete Enhanced Jarvis - Advanced AI Intelligence
 # File: src/enhanced_jarvis.py
 
-import anthropic
+import requests
 import sqlite3
 import json
 import sys
 import os
 from datetime import datetime, timedelta
-import re
+from typing import Dict, List, Any
 
 # Add config directory to path
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from config.credentials import CLAUDE_API_KEY
 
-class EnhancedJarvis:
-    """
-    Enhanced AI Assistant with Advanced Learning and Memory
-    
-    New AI Implementation Concepts:
-    - Cross-Session Memory: AI remembers conversations between sessions
-    - Pattern Learning: AI learns your productivity patterns over time
-    - Contextual Intelligence: AI provides increasingly personalized responses
-    - Predictive Insights: AI anticipates your needs based on patterns
-    - Advanced Analytics: AI analyzes your productivity for optimization
-    """
-    
+class DateTimeEncoder(json.JSONEncoder):
+    """Custom JSON encoder to handle datetime objects"""
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)
+
+class EnhancedJarvisAI:
     def __init__(self):
         """Initialize Enhanced Jarvis with advanced AI capabilities"""
-        self.client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
-        self.db_path = os.path.join('data', 'enhanced_jarvis.db')
+        self.db_path = "data/enhanced_jarvis.db"
         self.setup_enhanced_database()
         self.conversation_context = []
+        print("🧠 Enhanced Jarvis AI - Advanced Intelligence Mode")
+        print("💡 Features: Memory, Learning, Pattern Recognition, Career Coaching")
         
     def setup_enhanced_database(self):
-        """Create enhanced database for AI learning and memory"""
-        os.makedirs('data', exist_ok=True)
+        """Setup enhanced database with AI learning tables"""
+        os.makedirs("data", exist_ok=True)
         
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            
-            # Conversation memory for cross-session learning
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS conversation_memory (
-                    id INTEGER PRIMARY KEY,
-                    timestamp TIMESTAMP,
-                    user_input TEXT,
-                    ai_response TEXT,
-                    context_type TEXT,
-                    importance_score INTEGER,
-                    learning_tags TEXT
-                )
-            ''')
-            
-            # Productivity patterns learned by AI
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS productivity_patterns (
-                    id INTEGER PRIMARY KEY,
-                    pattern_type TEXT,
-                    pattern_data TEXT,
-                    confidence_score REAL,
-                    usage_count INTEGER,
-                    last_updated TIMESTAMP,
-                    validation_score REAL
-                )
-            ''')
-            
-            # AI-generated insights and recommendations
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS ai_insights (
-                    id INTEGER PRIMARY KEY,
-                    insight_category TEXT,
-                    insight_text TEXT,
-                    supporting_data TEXT,
-                    confidence REAL,
-                    acted_upon BOOLEAN DEFAULT FALSE,
-                    effectiveness_rating INTEGER,
-                    created_date TIMESTAMP
-                )
-            ''')
-            
-            # Task completion analytics for AI learning
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS task_analytics (
-                    id INTEGER PRIMARY KEY,
-                    task_description TEXT,
-                    task_category TEXT,
-                    estimated_duration INTEGER,
-                    actual_duration INTEGER,
-                    completion_quality INTEGER,
-                    energy_level TEXT,
-                    time_of_day TEXT,
-                    interruption_count INTEGER,
-                    completion_date TIMESTAMP,
-                    ai_prediction_accuracy REAL
-                )
-            ''')
-            
-            # User preferences learned by AI
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS learned_preferences (
-                    id INTEGER PRIMARY KEY,
-                    preference_type TEXT,
-                    preference_value TEXT,
-                    confidence REAL,
-                    supporting_evidence TEXT,
-                    last_confirmed TIMESTAMP
-                )
-            ''')
-            
-            conn.commit()
-            print("✅ Enhanced AI intelligence database initialized!")
-    
-    def intelligent_conversation(self, user_input):
-        """
-        Advanced AI conversation with memory and learning
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
         
-        This demonstrates how enterprise AI systems maintain context
-        and provide increasingly intelligent responses.
-        """
-        try:
-            # Retrieve relevant memories and patterns
-            relevant_memories = self.get_relevant_memories(user_input)
-            user_patterns = self.get_user_patterns()
-            recent_insights = self.get_recent_insights()
-            
-            # Build comprehensive context for AI
-            context_prompt = self.build_intelligent_context(
-                user_input, relevant_memories, user_patterns, recent_insights
+        # Conversation memory table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS conversations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT NOT NULL,
+                user_input TEXT NOT NULL,
+                ai_response TEXT NOT NULL,
+                context_data TEXT,
+                importance_score INTEGER DEFAULT 5,
+                session_id TEXT
             )
-            
-            # Get AI response with enhanced context
-            response = self.client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=1200,
-                messages=[{"role": "user", "content": context_prompt}]
+        ''')
+        
+        # Pattern recognition table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS learning_patterns (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                pattern_type TEXT NOT NULL,
+                pattern_data TEXT NOT NULL,
+                confidence_score REAL,
+                usage_count INTEGER DEFAULT 1,
+                last_updated TEXT,
+                effectiveness_score REAL DEFAULT 5.0
             )
-            
-            ai_response = response.content[0].text
-            
-            # Learn from this interaction
-            self.learn_from_conversation(user_input, ai_response)
-            
-            # Add to current conversation context
-            self.conversation_context.append({
-                'user': user_input,
-                'assistant': ai_response,
-                'timestamp': datetime.now()
-            })
-            
-            return ai_response
-            
-        except Exception as e:
-            return f"❌ AI conversation error: {str(e)}"
-    
-    def build_intelligent_context(self, user_input, memories, patterns, insights):
-        """Build comprehensive context for intelligent AI responses"""
+        ''')
         
-        context = f"""You are Jarvis, an advanced AI productivity assistant with enhanced intelligence and memory.
-
-CURRENT USER INPUT: {user_input}
-
-RELEVANT CONVERSATION MEMORIES:
-{json.dumps(memories[:3], indent=2) if memories else "No relevant memories found"}
-
-USER'S PRODUCTIVITY PATTERNS:
-{json.dumps(patterns, indent=2) if patterns else "Learning user patterns..."}
-
-RECENT AI INSIGHTS:
-{json.dumps(insights[:2], indent=2) if insights else "No recent insights"}
-
-CURRENT CONVERSATION CONTEXT:
-{json.dumps(self.conversation_context[-3:], indent=2) if self.conversation_context else "New conversation"}
-
-ENHANCED AI CAPABILITIES:
-- You remember conversations across sessions
-- You learn from user's productivity patterns
-- You provide increasingly personalized advice
-- You anticipate user needs based on learned patterns
-- You offer proactive suggestions for optimization
-
-RESPONSE GUIDELINES:
-1. Use memory and patterns to provide personalized advice
-2. Reference relevant past conversations when helpful
-3. Suggest optimizations based on learned patterns
-4. Be proactive with insights and recommendations
-5. Ask clarifying questions to learn more about the user
-6. Provide actionable, specific advice
-7. Acknowledge growth and learning progress
-
-Respond as an intelligent AI assistant that genuinely understands and learns from the user."""
-
-        return context
-    
-    def get_relevant_memories(self, current_input):
-        """Retrieve conversation memories relevant to current input"""
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            
-            # Get memories with high importance scores
-            cursor.execute('''
-                SELECT user_input, ai_response, context_type, learning_tags, timestamp
-                FROM conversation_memory 
-                WHERE importance_score >= 7
-                ORDER BY timestamp DESC 
-                LIMIT 10
-            ''')
-            
-            memories = cursor.fetchall()
-            
-            # Simple relevance scoring based on keyword overlap
-            relevant_memories = []
-            input_words = set(current_input.lower().split())
-            
-            for memory in memories:
-                user_input, ai_response, context_type, learning_tags, timestamp = memory
-                memory_words = set((user_input + " " + ai_response).lower().split())
-                
-                # Calculate relevance score
-                overlap = len(input_words.intersection(memory_words))
-                if overlap > 1:  # At least 2 words in common
-                    relevant_memories.append({
-                        'user_input': user_input,
-                        'ai_response': ai_response[:200] + "...",  # Truncate for context
-                        'context_type': context_type,
-                        'relevance_score': overlap,
-                        'timestamp': timestamp
-                    })
-            
-            # Sort by relevance
-            relevant_memories.sort(key=lambda x: x['relevance_score'], reverse=True)
-            return relevant_memories[:5]
-    
-    def get_user_patterns(self):
-        """Get learned productivity patterns"""
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-                SELECT pattern_type, pattern_data, confidence_score, usage_count
-                FROM productivity_patterns 
-                WHERE confidence_score > 0.6
-                ORDER BY confidence_score DESC
-                LIMIT 5
-            ''')
-            
-            patterns = cursor.fetchall()
-            
-            return [
-                {
-                    'type': row[0],
-                    'data': json.loads(row[1]) if row[1] else {},
-                    'confidence': row[2],
-                    'usage_count': row[3]
-                } for row in patterns
-            ]
-    
-    def get_recent_insights(self):
-        """Get recent AI-generated insights"""
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-                SELECT insight_category, insight_text, confidence, effectiveness_rating
-                FROM ai_insights 
-                WHERE created_date >= date('now', '-7 days')
-                ORDER BY confidence DESC
-                LIMIT 3
-            ''')
-            
-            insights = cursor.fetchall()
-            
-            return [
-                {
-                    'category': row[0],
-                    'insight': row[1],
-                    'confidence': row[2],
-                    'effectiveness': row[3]
-                } for row in insights
-            ]
-    
-    def learn_from_conversation(self, user_input, ai_response):
-        """Learn and store insights from conversations"""
-        # Determine conversation importance and context
-        importance = self.assess_conversation_importance(user_input, ai_response)
-        context_type = self.categorize_conversation_context(user_input)
-        learning_tags = self.extract_learning_tags(user_input, ai_response)
+        # User preferences and goals
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS user_profile (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                profile_key TEXT UNIQUE NOT NULL,
+                profile_value TEXT NOT NULL,
+                updated_date TEXT,
+                confidence_level REAL DEFAULT 0.8
+            )
+        ''')
         
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
+        # Task completion tracking for learning
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS task_completions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                task_description TEXT NOT NULL,
+                category TEXT,
+                estimated_time INTEGER,
+                actual_time INTEGER,
+                completion_quality INTEGER,
+                energy_level TEXT,
+                time_of_day INTEGER,
+                completion_date TEXT,
+                learning_notes TEXT
+            )
+        ''')
+        
+        # AI insights and recommendations
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS ai_insights (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                insight_type TEXT NOT NULL,
+                insight_content TEXT NOT NULL,
+                supporting_data TEXT,
+                confidence_score REAL,
+                created_date TEXT,
+                applied_date TEXT,
+                effectiveness_rating INTEGER
+            )
+        ''')
+        
+        conn.commit()
+        conn.close()
+        
+    def ask_claude_enhanced(self, question, context="", system_prompt="", use_memory=True):
+        """Enhanced Claude interaction with memory and context"""
+        url = "https://api.anthropic.com/v1/messages"
+        headers = {"Content-Type": "application/json"}
+        
+        # Build comprehensive context if memory is enabled
+        if use_memory:
+            memory_context = self.get_relevant_memory(question)
+            user_profile = self.get_user_profile_context()
+            recent_patterns = self.get_recent_patterns()
             
-            cursor.execute('''
-                INSERT INTO conversation_memory
-                (timestamp, user_input, ai_response, context_type, importance_score, learning_tags)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (datetime.now(), user_input, ai_response, context_type, importance, 
-                  json.dumps(learning_tags)))
-            
-            conn.commit()
-    
-    def assess_conversation_importance(self, user_input, ai_response):
-        """Assess the importance of a conversation for learning"""
-        importance = 5  # Base importance
-        
-        # High importance indicators
-        high_importance_keywords = [
-            'goal', 'deadline', 'priority', 'important', 'urgent', 
-            'project', 'meeting', 'presentation', 'learning', 'improve'
-        ]
-        
-        # Medium importance indicators
-        medium_importance_keywords = [
-            'schedule', 'plan', 'organize', 'task', 'work', 'productivity'
-        ]
-        
-        user_lower = user_input.lower()
-        
-        for keyword in high_importance_keywords:
-            if keyword in user_lower:
-                importance += 2
-        
-        for keyword in medium_importance_keywords:
-            if keyword in user_lower:
-                importance += 1
-        
-        # Cap at 10
-        return min(importance, 10)
-    
-    def categorize_conversation_context(self, user_input):
-        """Categorize the type of conversation for better organization"""
-        user_lower = user_input.lower()
-        
-        if any(word in user_lower for word in ['schedule', 'plan', 'calendar', 'time']):
-            return 'scheduling'
-        elif any(word in user_lower for word in ['task', 'work', 'project', 'deadline']):
-            return 'task_management'
-        elif any(word in user_lower for word in ['learn', 'study', 'course', 'skill']):
-            return 'learning'
-        elif any(word in user_lower for word in ['goal', 'improve', 'optimize', 'better']):
-            return 'optimization'
-        elif any(word in user_lower for word in ['meeting', 'presentation', 'client']):
-            return 'meeting_prep'
+            enhanced_context = f"""
+            CONVERSATION MEMORY: {memory_context}
+            USER PROFILE: {user_profile}
+            RECENT PATTERNS: {recent_patterns}
+            CURRENT CONTEXT: {context}
+            """
         else:
-            return 'general'
+            enhanced_context = context
+        
+        if not system_prompt:
+            system_prompt = """You are Enhanced Jarvis, an advanced AI assistant with persistent memory and deep learning capabilities. You remember all previous conversations and learn from user patterns to provide increasingly personalized advice.
+
+Your key capabilities:
+- Persistent memory across all sessions
+- Pattern recognition and learning from user behavior
+- Personalized productivity coaching based on historical data
+- Career development support for AI Integration Specialist goals
+- Context-aware suggestions based on time, energy, and workload
+- Emotional intelligence and motivational support
+
+Remember: You have access to conversation history and user patterns. Reference previous discussions naturally and build upon established context. Provide specific, actionable advice that demonstrates your understanding of the user's goals and patterns.
+
+The user is learning AI implementation skills to become an AI Integration Specialist. Support this career development journey with relevant technical insights and industry knowledge."""
+
+        full_prompt = f"""
+        {system_prompt}
+        
+        Enhanced Context: {enhanced_context}
+        
+        Current User Query: {question}
+        
+        Provide a response that demonstrates your memory of previous conversations and learning from user patterns. Be specific, helpful, and reference relevant context from our history together.
+        """
+        
+        data = {
+            "model": "claude-sonnet-4-20250514",
+            "max_tokens": 1000,
+            "messages": [{"role": "user", "content": full_prompt}]
+        }
+        
+        try:
+            response = requests.post(url, headers=headers, json=data)
+            if response.status_code == 200:
+                result = response.json()
+                ai_response = result['content'][0]['text']
+                
+                # Store conversation in memory
+                self.store_conversation(question, ai_response, enhanced_context)
+                
+                return ai_response
+            else:
+                return f"AI connection error: {response.status_code}"
+        except Exception as e:
+            return f"Connection error: {e}"
     
-    def extract_learning_tags(self, user_input, ai_response):
-        """Extract learning tags from conversation"""
-        tags = []
+    def store_conversation(self, user_input, ai_response, context):
+        """Store conversation with enhanced metadata for learning"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
         
-        # Extract entities and keywords
-        combined_text = (user_input + " " + ai_response).lower()
+        # Determine importance score based on content
+        importance = 5
+        if any(keyword in user_input.lower() for keyword in ['important', 'career', 'goal', 'problem', 'help', 'learn']):
+            importance = 8
+        elif any(keyword in user_input.lower() for keyword in ['quick', 'simple', 'just', 'what']):
+            importance = 3
         
-        # Time-related tags
-        time_keywords = ['morning', 'afternoon', 'evening', 'daily', 'weekly']
-        for keyword in time_keywords:
-            if keyword in combined_text:
-                tags.append(f"time:{keyword}")
+        session_id = datetime.now().strftime("%Y%m%d")
         
-        # Activity tags
-        activity_keywords = ['coding', 'meeting', 'email', 'presentation', 'learning', 'planning']
-        for keyword in activity_keywords:
-            if keyword in combined_text:
-                tags.append(f"activity:{keyword}")
+        cursor.execute('''
+            INSERT INTO conversations (timestamp, user_input, ai_response, context_data, importance_score, session_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (datetime.now().isoformat(), user_input, ai_response, context, importance, session_id))
         
-        # Goal tags
-        goal_keywords = ['productivity', 'efficiency', 'organization', 'learning', 'career']
-        for keyword in goal_keywords:
-            if keyword in combined_text:
-                tags.append(f"goal:{keyword}")
+        conn.commit()
+        conn.close()
         
-        return tags
+        # Update conversation context for current session
+        self.conversation_context.append({
+            'user': user_input,
+            'assistant': ai_response,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+        # Keep only last 10 exchanges in memory for performance
+        if len(self.conversation_context) > 10:
+            self.conversation_context = self.conversation_context[-10:]
+    
+    def get_relevant_memory(self, query, limit=5):
+        """Retrieve relevant conversation history based on query"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        # Get recent high-importance conversations
+        cursor.execute('''
+            SELECT user_input, ai_response, timestamp FROM conversations 
+            WHERE importance_score >= 6
+            ORDER BY timestamp DESC LIMIT ?
+        ''', (limit,))
+        
+        recent_conversations = cursor.fetchall()
+        
+        # Format for context
+        memory_summary = []
+        for user_input, ai_response, timestamp in recent_conversations:
+            dt = datetime.fromisoformat(timestamp)
+            memory_summary.append(f"[{dt.strftime('%m/%d')}] User: {user_input[:100]}... Assistant: {ai_response[:100]}...")
+        
+        conn.close()
+        return "\n".join(memory_summary) if memory_summary else "No relevant memory found."
+    
+    def get_user_profile_context(self):
+        """Get user profile and preferences for context"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT profile_key, profile_value FROM user_profile ORDER BY updated_date DESC')
+        profile_data = cursor.fetchall()
+        
+        if not profile_data:
+            # Initialize basic profile
+            self.update_user_profile("career_goal", "AI Integration Specialist")
+            self.update_user_profile("learning_focus", "AI implementation and Python development")
+            profile_data = [("career_goal", "AI Integration Specialist"), ("learning_focus", "AI implementation and Python development")]
+        
+        conn.close()
+        
+        profile_summary = "; ".join([f"{key}: {value}" for key, value in profile_data])
+        return profile_summary
+    
+    def update_user_profile(self, key, value):
+        """Update user profile information"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT OR REPLACE INTO user_profile (profile_key, profile_value, updated_date)
+            VALUES (?, ?, ?)
+        ''', (key, value, datetime.now().isoformat()))
+        
+        conn.commit()
+        conn.close()
+    
+    def get_recent_patterns(self):
+        """Get recent learning patterns for context"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT pattern_type, pattern_data, confidence_score FROM learning_patterns 
+            WHERE last_updated > date('now', '-30 days')
+            ORDER BY confidence_score DESC LIMIT 3
+        ''')
+        
+        patterns = cursor.fetchall()
+        conn.close()
+        
+        if patterns:
+            pattern_summary = "; ".join([f"{pattern_type}: {json.loads(pattern_data)['summary']}" for pattern_type, pattern_data, _ in patterns])
+            return pattern_summary
+        return "No recent patterns identified."
+    
+    def record_task_completion(self, task_description, category, estimated_minutes, actual_minutes, quality_rating=5):
+        """Record task completion for pattern learning"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        current_hour = datetime.now().hour
+        
+        # Determine energy level based on time of day
+        if 6 <= current_hour <= 10:
+            energy_level = "high"
+        elif 11 <= current_hour <= 14:
+            energy_level = "medium-high"
+        elif 15 <= current_hour <= 17:
+            energy_level = "medium"
+        elif 18 <= current_hour <= 21:
+            energy_level = "medium-low"
+        else:
+            energy_level = "low"
+        
+        cursor.execute('''
+            INSERT INTO task_completions 
+            (task_description, category, estimated_time, actual_time, completion_quality, 
+             energy_level, time_of_day, completion_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (task_description, category, estimated_minutes, actual_minutes, quality_rating, 
+              energy_level, current_hour, datetime.now().isoformat()))
+        
+        conn.commit()
+        conn.close()
+        
+        # Generate learning insight
+        variance = actual_minutes - estimated_minutes
+        variance_percent = (variance / estimated_minutes) * 100 if estimated_minutes > 0 else 0
+        
+        print(f"✅ Task completion recorded!")
+        print(f"📊 Time variance: {variance:+d} minutes ({variance_percent:+.1f}%)")
+        print(f"⚡ Energy level: {energy_level}")
+        print(f"🏆 Quality rating: {quality_rating}/10")
+        
+        # Update patterns if significant variance
+        if abs(variance_percent) > 20:
+            self.update_learning_pattern("time_estimation", {
+                "category": category,
+                "typical_variance": variance_percent,
+                "energy_level": energy_level,
+                "summary": f"{category} tasks at {energy_level} energy typically {variance_percent:+.1f}% vs estimate"
+            })
+    
+    def update_learning_pattern(self, pattern_type, pattern_data):
+        """Update or create learning patterns"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        # Check if pattern exists
+        cursor.execute('SELECT id, usage_count FROM learning_patterns WHERE pattern_type = ?', (pattern_type,))
+        existing = cursor.fetchone()
+        
+        if existing:
+            pattern_id, usage_count = existing
+            cursor.execute('''
+                UPDATE learning_patterns 
+                SET pattern_data = ?, usage_count = ?, last_updated = ?
+                WHERE id = ?
+            ''', (json.dumps(pattern_data, cls=DateTimeEncoder), usage_count + 1, datetime.now().isoformat(), pattern_id))
+        else:
+            cursor.execute('''
+                INSERT INTO learning_patterns (pattern_type, pattern_data, last_updated)
+                VALUES (?, ?, ?)
+            ''', (pattern_type, json.dumps(pattern_data, cls=DateTimeEncoder), datetime.now().isoformat()))
+        
+        conn.commit()
+        conn.close()
     
     def analyze_productivity_patterns(self):
-        """Advanced AI analysis of productivity patterns"""
-        try:
-            print("\n🧠 AI analyzing your productivity patterns...")
-            
-            # Get task completion data
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                
-                # Check if we have task analytics data
-                cursor.execute('SELECT COUNT(*) FROM task_analytics')
-                task_count = cursor.fetchone()[0]
-                
-                if task_count < 5:
-                    return self.generate_starter_insights()
-                
-                cursor.execute('''
-                    SELECT task_category, estimated_duration, actual_duration,
-                           completion_quality, energy_level, time_of_day,
-                           interruption_count, completion_date
-                    FROM task_analytics 
-                    WHERE completion_date >= date('now', '-30 days')
-                ''')
-                
-                analytics_data = cursor.fetchall()
-            
-            # Get conversation patterns
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT context_type, COUNT(*) as frequency, learning_tags
-                    FROM conversation_memory
-                    WHERE timestamp >= date('now', '-14 days')
-                    GROUP BY context_type
-                    ORDER BY frequency DESC
-                ''')
-                
-                conversation_patterns = cursor.fetchall()
-            
-            # Create comprehensive analysis prompt
-            analysis_prompt = f"""
-            Analyze this user's productivity and conversation patterns to generate intelligent insights:
-            
-            TASK COMPLETION DATA:
-            {json.dumps(analytics_data, indent=2)}
-            
-            CONVERSATION PATTERNS:
-            {json.dumps(conversation_patterns, indent=2)}
-            
-            ANALYSIS DATE: {datetime.now().strftime('%Y-%m-%d')}
-            
-            Provide comprehensive productivity analysis in JSON format:
-            {{
-                "overall_assessment": {{
-                    "productivity_score": 1-10,
-                    "efficiency_trend": "improving|stable|declining",
-                    "strongest_areas": ["area1", "area2"],
-                    "improvement_opportunities": ["opportunity1", "opportunity2"]
-                }},
-                "time_management_insights": {{
-                    "optimal_work_times": ["time periods when most productive"],
-                    "energy_patterns": ["observations about energy throughout day"],
-                    "time_estimation_accuracy": "how good at estimating task duration",
-                    "interruption_management": "patterns with interruptions"
-                }},
-                "personalized_recommendations": [
-                    "specific actionable recommendation based on patterns",
-                    "another personalized suggestion",
-                    "optimization opportunity"
-                ],
-                "learning_progress": {{
-                    "ai_usage_patterns": "how user is engaging with AI assistant",
-                    "skill_development": "progress in productivity/organization skills",
-                    "system_adoption": "how well using the AI system"
-                }},
-                "predictive_insights": [
-                    "prediction about future productivity patterns",
-                    "anticipated challenges and how to address them"
-                ]
-            }}
-            
-            Focus on actionable insights that help improve productivity and AI system usage.
-            """
-            
-            response = self.client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=1500,
-                messages=[{"role": "user", "content": analysis_prompt}]
-            )
-            
-            ai_analysis = response.content[0].text
-            
-            # Extract JSON from response
-            json_match = re.search(r'\{.*\}', ai_analysis, re.DOTALL)
-            if json_match:
-                analysis = json.loads(json_match.group())
-                
-                # Store insights in database
-                self.store_ai_insights(analysis)
-                
-                return self.format_productivity_analysis(analysis)
-            else:
-                return "Analysis completed but couldn't parse results. Raw insights:\n" + ai_analysis
-                
-        except Exception as e:
-            return f"❌ Error in pattern analysis: {str(e)}"
+        """Analyze productivity patterns and generate insights"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        # Get task completion data
+        cursor.execute('''
+            SELECT category, energy_level, time_of_day, AVG(actual_time), AVG(completion_quality),
+                   COUNT(*) as task_count
+            FROM task_completions 
+            WHERE completion_date > date('now', '-30 days')
+            GROUP BY category, energy_level, time_of_day
+            HAVING task_count >= 2
+            ORDER BY AVG(completion_quality) DESC
+        ''')
+        
+        patterns = cursor.fetchall()
+        
+        if not patterns:
+            return "📊 Not enough data yet. Complete more tasks to see patterns!"
+        
+        analysis = ["🧠 PRODUCTIVITY PATTERN ANALYSIS", "=" * 40]
+        
+        # Best performance analysis
+        best_pattern = patterns[0]
+        category, energy, hour, avg_time, avg_quality, count = best_pattern
+        
+        analysis.append(f"\n🏆 OPTIMAL PERFORMANCE ZONE:")
+        analysis.append(f"   Category: {category}")
+        analysis.append(f"   Energy Level: {energy}")
+        analysis.append(f"   Time of Day: {hour}:00")
+        analysis.append(f"   Average Quality: {avg_quality:.1f}/10")
+        analysis.append(f"   Sample Size: {count} tasks")
+        
+        # Energy level insights
+        cursor.execute('''
+            SELECT energy_level, AVG(completion_quality), COUNT(*)
+            FROM task_completions 
+            WHERE completion_date > date('now', '-30 days')
+            GROUP BY energy_level
+            ORDER BY AVG(completion_quality) DESC
+        ''')
+        
+        energy_patterns = cursor.fetchall()
+        
+        analysis.append(f"\n⚡ ENERGY LEVEL PERFORMANCE:")
+        for energy, quality, count in energy_patterns:
+            analysis.append(f"   {energy.title()}: {quality:.1f}/10 quality ({count} tasks)")
+        
+        # Time estimation accuracy
+        cursor.execute('''
+            SELECT category, 
+                   AVG(actual_time - estimated_time) as avg_variance,
+                   COUNT(*) as task_count
+            FROM task_completions 
+            WHERE completion_date > date('now', '-30 days') AND estimated_time > 0
+            GROUP BY category
+            ORDER BY ABS(AVG(actual_time - estimated_time))
+        ''')
+        
+        estimation_accuracy = cursor.fetchall()
+        
+        analysis.append(f"\n⏱️  TIME ESTIMATION ACCURACY:")
+        for category, variance, count in estimation_accuracy:
+            accuracy = "excellent" if abs(variance) < 10 else "good" if abs(variance) < 20 else "needs improvement"
+            analysis.append(f"   {category}: {variance:+.1f} min avg variance ({accuracy})")
+        
+        conn.close()
+        
+        return "\n".join(analysis)
     
-    def generate_starter_insights(self):
-        """Generate insights for new users with limited data"""
-        return """
-🧠 AI PRODUCTIVITY ANALYSIS - STARTER INSIGHTS
-===============================================
-
-📊 Current Status: Building AI Learning Foundation
-Your AI assistant is in the early learning phase. Keep using the system daily for increasingly personalized insights!
-
-💡 Getting Started Recommendations:
-   • Use detailed task descriptions for better AI learning
-   • Record actual completion times to improve predictions
-   • Try the daily check-in feature to establish patterns
-   • Be consistent with task categorization
-
-🎯 Next Steps:
-   • Continue using the system for 1-2 weeks
-   • Focus on entering 5-8 tasks daily
-   • Provide feedback on time estimates and scheduling
-   • Use the calendar export feature to integrate with your workflow
-
-📈 What to Expect:
-After 1-2 weeks of consistent usage, you'll start seeing:
-   • More accurate time predictions
-   • Personalized scheduling suggestions
-   • Pattern recognition in your productivity
-   • Proactive optimization recommendations
-
-Keep building your AI training data! The system gets smarter with every interaction.
-"""
+    def get_personalized_insights(self):
+        """Generate personalized insights based on user data"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        # Get recent activity summary
+        cursor.execute('''
+            SELECT COUNT(*) FROM conversations 
+            WHERE timestamp > datetime('now', '-7 days')
+        ''')
+        recent_conversations = cursor.fetchone()[0]
+        
+        cursor.execute('''
+            SELECT COUNT(*) FROM task_completions 
+            WHERE completion_date > date('now', '-7 days')
+        ''')
+        recent_completions = cursor.fetchone()[0]
+        
+        # Get learning progress indicators
+        cursor.execute('''
+            SELECT pattern_type, COUNT(*) FROM learning_patterns 
+            GROUP BY pattern_type
+        ''')
+        pattern_counts = cursor.fetchall()
+        
+        conn.close()
+        
+        insights = [
+            f"📈 PERSONALIZED AI INSIGHTS",
+            f"=" * 40,
+            f"🗣️  Recent Activity: {recent_conversations} conversations this week",
+            f"✅ Task Completions: {recent_completions} tasks completed",
+            f"🧠 Learning Patterns: {len(pattern_counts)} pattern types identified",
+            f"",
+            f"💡 AI is learning your preferences and optimizing recommendations",
+            f"🎯 Continue using Enhanced Jarvis to unlock more personalized insights"
+        ]
+        
+        return "\n".join(insights)
     
-    def store_ai_insights(self, analysis):
-        """Store AI-generated insights for future reference"""
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
+    def intelligent_conversation(self):
+        """Main conversation interface with enhanced capabilities"""
+        print("\n💬 ENHANCED AI CONVERSATION MODE")
+        print("🧠 I remember our previous conversations and learn from your patterns!")
+        print("💡 Try: 'analyze my patterns', 'what should I focus on?', 'how am I improving?'")
+        print("📝 Commands: 'record completion', 'my insights', 'my patterns', 'help', 'conversations'")
+        print("🚪 Exit: Type 'quit', 'exit', or 'back' to return")
+        
+        while True:
+            print("\n" + "-" * 50)
+            user_input = input("🎤 You: ").strip()
             
-            # Store overall assessment
-            overall = analysis.get('overall_assessment', {})
-            cursor.execute('''
-                INSERT INTO ai_insights 
-                (insight_category, insight_text, supporting_data, confidence, created_date)
-                VALUES (?, ?, ?, ?, ?)
-            ''', ('overall_assessment', 
-                  f"Productivity score: {overall.get('productivity_score', 'N/A')}/10. {overall.get('efficiency_trend', 'Unknown')} trend.",
-                  json.dumps(overall),
-                  0.8,
-                  datetime.now()))
-            
-            # Store recommendations
-            recommendations = analysis.get('personalized_recommendations', [])
-            for rec in recommendations:
-                cursor.execute('''
-                    INSERT INTO ai_insights 
-                    (insight_category, insight_text, supporting_data, confidence, created_date)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', ('recommendation', rec, json.dumps(analysis), 0.7, datetime.now()))
-            
-            conn.commit()
-    
-    def format_productivity_analysis(self, analysis):
-        """Format AI analysis into readable output"""
-        output = "\n🧠 AI PRODUCTIVITY ANALYSIS\n" + "="*50 + "\n"
-        
-        # Overall Assessment
-        overall = analysis.get('overall_assessment', {})
-        if overall:
-            output += "📊 OVERALL ASSESSMENT:\n"
-            output += f"   Productivity Score: {overall.get('productivity_score', 'N/A')}/10\n"
-            output += f"   Efficiency Trend: {overall.get('efficiency_trend', 'Unknown')}\n"
-            
-            strongest = overall.get('strongest_areas', [])
-            if strongest:
-                output += "   Strongest Areas:\n"
-                for area in strongest:
-                    output += f"      • {area}\n"
-            
-            improvements = overall.get('improvement_opportunities', [])
-            if improvements:
-                output += "   Improvement Opportunities:\n"
-                for opp in improvements:
-                    output += f"      • {opp}\n"
-            output += "\n"
-        
-        # Time Management Insights
-        time_insights = analysis.get('time_management_insights', {})
-        if time_insights:
-            output += "⏰ TIME MANAGEMENT INSIGHTS:\n"
-            for key, value in time_insights.items():
-                key_formatted = key.replace('_', ' ').title()
-                if isinstance(value, list):
-                    output += f"   {key_formatted}:\n"
-                    for item in value:
-                        output += f"      • {item}\n"
-                else:
-                    output += f"   {key_formatted}: {value}\n"
-            output += "\n"
-        
-        # Recommendations
-        recommendations = analysis.get('personalized_recommendations', [])
-        if recommendations:
-            output += "💡 PERSONALIZED RECOMMENDATIONS:\n"
-            for rec in recommendations:
-                output += f"   • {rec}\n"
-            output += "\n"
-        
-        # Learning Progress
-        learning = analysis.get('learning_progress', {})
-        if learning:
-            output += "📚 LEARNING PROGRESS:\n"
-            for key, value in learning.items():
-                key_formatted = key.replace('_', ' ').title()
-                output += f"   {key_formatted}: {value}\n"
-            output += "\n"
-        
-        # Predictive Insights
-        predictive = analysis.get('predictive_insights', [])
-        if predictive:
-            output += "🔮 PREDICTIVE INSIGHTS:\n"
-            for insight in predictive:
-                output += f"   • {insight}\n"
-        
-        return output
-    
-    def record_task_completion(self, task_description, category, estimated_min, 
-                             actual_min, quality_rating, energy_level):
-        """Record task completion for AI learning"""
-        now = datetime.now()
-        hour = now.hour
-        
-        time_of_day = (
-            "morning" if hour < 12 else 
-            "afternoon" if hour < 17 else 
-            "evening"
-        )
-        
-        # Simple interruption estimation based on duration variance
-        duration_variance = abs(actual_min - estimated_min)
-        interruption_estimate = min(duration_variance // 15, 5)  # Rough estimate
-        
-        # Calculate AI prediction accuracy
-        accuracy = 1.0 - min(duration_variance / max(estimated_min, 1), 1.0)
-        
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-                INSERT INTO task_analytics
-                (task_description, task_category, estimated_duration, actual_duration,
-                 completion_quality, energy_level, time_of_day, interruption_count,
-                 completion_date, ai_prediction_accuracy)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (task_description, category, estimated_min, actual_min,
-                  quality_rating, energy_level, time_of_day, interruption_estimate,
-                  now, accuracy))
-            
-            conn.commit()
-        
-        return "✅ Task completion recorded! AI is learning from your patterns."
-
-def main():
-    """Main function for Enhanced Jarvis"""
-    print("🧠 Enhanced Jarvis AI Assistant - Advanced Intelligence Mode")
-    print("="*65)
-    print("🚀 NEW ADVANCED CAPABILITIES:")
-    print("   • Cross-session memory - Remembers all conversations")
-    print("   • Pattern learning - Learns your productivity patterns")
-    print("   • Contextual intelligence - Increasingly personalized responses")
-    print("   • Advanced analytics - Deep insights into your productivity")
-    print("   • Predictive suggestions - Anticipates your needs")
-    print("\n💬 ENHANCED COMMANDS:")
-    print("   'analyze patterns' - Advanced AI productivity analysis")
-    print("   'record completion' - Log completed task for AI learning")
-    print("   'my patterns' - View learned productivity patterns")
-    print("   'insights' - Recent AI-generated insights")
-    print("   'quit' - Exit")
-    print("   Or just chat naturally - I remember everything!")
-    print("="*65)
-    
-    jarvis = EnhancedJarvis()
-    
-    while True:
-        try:
-            user_input = input("\n💬 You: ").strip()
-            
-            if user_input.lower() == 'quit':
-                print("👋 Enhanced Jarvis is powering down but remembers everything for next time!")
+            if user_input.lower() in ['quit', 'exit', 'back', 'bye']:
+                print("🤖 Conversation saved! I'll remember everything for next time.")
                 break
             
-            elif user_input.lower() == 'analyze patterns':
-                analysis = jarvis.analyze_productivity_patterns()
-                print(analysis)
+            if not user_input:
+                continue
             
-            elif user_input.lower() == 'record completion':
-                print("\n📝 Recording completed task for AI learning:")
-                description = input("Task description: ")
-                category = input("Category (work/learning/personal/admin): ")
-                estimated = int(input("Estimated time (minutes): "))
-                actual = int(input("Actual time (minutes): "))
-                quality = int(input("Completion quality (1-10): "))
-                energy = input("Energy level (high/medium/low): ")
+            # Handle special commands
+            if user_input.lower() == 'help':
+                print("🆘 ENHANCED JARVIS COMMANDS:")
+                print("• 'analyze my patterns' - Deep productivity analysis")
+                print("• 'record completion [task] [category] [estimated] [actual] [quality]' - Track task")
+                print("• 'my insights' - Personalized AI insights")
+                print("• 'my patterns' - View learning patterns")
+                print("• 'conversations' - View recent conversation history")
+                print("• 'focus suggestions' - Get context-aware recommendations")
+                print("• General conversation - Ask anything about productivity, career, AI!")
+                continue
+            
+            if user_input.lower().startswith('record completion'):
+                # Parse task completion command
+                parts = user_input.split(' ', 2)
+                if len(parts) >= 3:
+                    try:
+                        # Simple parsing - could be enhanced with NLP
+                        task_desc = input("📝 Task description: ")
+                        category = input("📂 Category: ") or "General"
+                        estimated = int(input("⏱️  Estimated minutes: "))
+                        actual = int(input("⏲️  Actual minutes: "))
+                        quality = int(input("🏆 Quality rating (1-10): "))
+                        
+                        self.record_task_completion(task_desc, category, estimated, actual, quality)
+                    except ValueError:
+                        print("❌ Please enter valid numbers for time and quality.")
+                else:
+                    print("💡 Usage: record completion")
+                continue
+            
+            if user_input.lower() in ['my patterns', 'analyze patterns', 'analyze my patterns']:
+                analysis = self.analyze_productivity_patterns()
+                print(f"\n{analysis}")
+                continue
+            
+            if user_input.lower() in ['my insights', 'insights']:
+                insights = self.get_personalized_insights()
+                print(f"\n{insights}")
+                continue
+            
+            if user_input.lower() == 'conversations':
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT timestamp, user_input, ai_response FROM conversations 
+                    ORDER BY timestamp DESC LIMIT 5
+                ''')
+                recent = cursor.fetchall()
+                conn.close()
                 
-                result = jarvis.record_task_completion(
-                    description, category, estimated, actual, quality, energy
-                )
-                print(result)
+                print("\n📚 RECENT CONVERSATION HISTORY:")
+                for timestamp, user_q, ai_resp in recent:
+                    dt = datetime.fromisoformat(timestamp)
+                    print(f"\n[{dt.strftime('%m/%d %H:%M')}]")
+                    print(f"You: {user_q[:80]}...")
+                    print(f"AI: {ai_resp[:80]}...")
+                continue
             
-            elif user_input.lower() == 'my patterns':
-                patterns = jarvis.get_user_patterns()
-                if patterns:
-                    print("\n📊 Your Learned Productivity Patterns:")
-                    for pattern in patterns:
-                        print(f"   • {pattern['type']}: {pattern['confidence']:.1%} confidence")
+            # Regular AI conversation with memory
+            print("🤖 Thinking with full context and memory...")
+            response = self.ask_claude_enhanced(user_input)
+            print(f"\n🧠 Enhanced Jarvis: {response}")
+
+def main():
+    """Main Enhanced Jarvis application"""
+    enhanced_jarvis = EnhancedJarvisAI()
+    
+    # Welcome message with personalization
+    print("\n🌟 Welcome back to Enhanced Jarvis!")
+    
+    # Check for existing conversation history
+    conn = sqlite3.connect(enhanced_jarvis.db_path)
+    cursor = conn.cursor()
+    cursor.execute('SELECT COUNT(*) FROM conversations')
+    conversation_count = cursor.fetchone()[0]
+    
+    if conversation_count > 0:
+        print(f"💭 I remember our {conversation_count} previous conversations!")
+        cursor.execute('SELECT user_input FROM conversations ORDER BY timestamp DESC LIMIT 1')
+        last_conversation = cursor.fetchone()
+        if last_conversation:
+            print(f"💡 Last time we discussed: {last_conversation[0][:60]}...")
+    else:
+        print("🆕 This is our first conversation! I'm excited to learn about you.")
+        # Set up initial profile
+        enhanced_jarvis.update_user_profile("first_session", datetime.now().isoformat())
+    
+    conn.close()
+    
+    while True:
+        print("\n" + "="*60)
+        print("🧠 ENHANCED JARVIS AI - ADVANCED INTELLIGENCE")
+        print("="*60)
+        print("1. 💬 Intelligent Conversation (with Memory)")
+        print("2. 📊 Analyze My Productivity Patterns")
+        print("3. 💡 Get Personalized Insights") 
+        print("4. 📝 Record Task Completion")
+        print("5. 📚 View Conversation History")
+        print("6. 🎯 Update Goals & Preferences")
+        print("7. 🔄 Back to Basic Jarvis")
+        print("8. ❌ Exit Enhanced Mode")
+        print("="*60)
+        
+        choice = input("🎯 Choose an option (1-8): ").strip()
+        
+        if choice == "1":
+            enhanced_jarvis.intelligent_conversation()
+            
+        elif choice == "2":
+            print("\n📊 PRODUCTIVITY PATTERN ANALYSIS")
+            print("-" * 40)
+            analysis = enhanced_jarvis.analyze_productivity_patterns()
+            print(analysis)
+            
+        elif choice == "3":
+            print("\n💡 PERSONALIZED INSIGHTS")
+            print("-" * 40)
+            insights = enhanced_jarvis.get_personalized_insights()
+            print(insights)
+            
+        elif choice == "4":
+            print("\n📝 RECORD TASK COMPLETION")
+            print("-" * 40)
+            try:
+                task_desc = input("📋 Task description: ").strip()
+                if task_desc:
+                    category = input("📂 Category (work/personal/learning): ").strip() or "General"
+                    estimated = int(input("⏱️  Estimated time (minutes): "))
+                    actual = int(input("⏲️  Actual time (minutes): "))
+                    quality = int(input("🏆 Quality rating (1-10): "))
+                    
+                    enhanced_jarvis.record_task_completion(task_desc, category, estimated, actual, quality)
                 else:
-                    print("📊 Still learning your patterns. Use the system more to see insights!")
+                    print("❌ Task description required.")
+            except ValueError:
+                print("❌ Please enter valid numbers.")
+                
+        elif choice == "5":
+            print("\n📚 CONVERSATION HISTORY")
+            print("-" * 40)
+            conn = sqlite3.connect(enhanced_jarvis.db_path)
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT timestamp, user_input, ai_response, importance_score FROM conversations 
+                ORDER BY timestamp DESC LIMIT 10
+            ''')
+            conversations = cursor.fetchall()
+            conn.close()
             
-            elif user_input.lower() == 'insights':
-                insights = jarvis.get_recent_insights()
-                if insights:
-                    print("\n💡 Recent AI Insights:")
-                    for insight in insights:
-                        print(f"   • {insight['category']}: {insight['insight']}")
-                else:
-                    print("💡 No recent insights. Keep using the system to generate AI insights!")
-            
+            if conversations:
+                for timestamp, user_input, ai_response, importance in conversations:
+                    dt = datetime.fromisoformat(timestamp)
+                    importance_icon = "🔥" if importance >= 8 else "⭐" if importance >= 6 else "💬"
+                    print(f"\n{importance_icon} [{dt.strftime('%m/%d %H:%M')}] Importance: {importance}/10")
+                    print(f"You: {user_input[:100]}...")
+                    print(f"AI: {ai_response[:100]}...")
+                    print("-" * 40)
             else:
-                print("\n🤖 Enhanced Jarvis: ", end="")
-                response = jarvis.intelligent_conversation(user_input)
-                print(response)
+                print("📝 No conversation history yet. Start chatting to build memory!")
                 
-        except KeyboardInterrupt:
-            print("\n👋 Enhanced Jarvis is powering down but remembers everything for next time!")
+        elif choice == "6":
+            print("\n🎯 UPDATE GOALS & PREFERENCES")
+            print("-" * 40)
+            print("Current focus: AI Integration Specialist career development")
+            new_goal = input("🎯 Update career goal (or press Enter to keep current): ").strip()
+            if new_goal:
+                enhanced_jarvis.update_user_profile("career_goal", new_goal)
+                print(f"✅ Updated career goal: {new_goal}")
+            
+            new_focus = input("📚 Update learning focus (or press Enter to skip): ").strip()
+            if new_focus:
+                enhanced_jarvis.update_user_profile("learning_focus", new_focus)
+                print(f"✅ Updated learning focus: {new_focus}")
+                
+        elif choice == "7":
+            print("\n🔄 Switching to Basic Jarvis...")
+            print("💡 Run: python src/basic_jarvis.py")
             break
-        except Exception as e:
-            print(f"\n❌ Error: {str(e)}")
+            
+        elif choice == "8":
+            print("\n🧠 Enhanced Jarvis session complete!")
+            print("💭 All conversations and learning saved for next time.")
+            print("🚀 Your AI assistant gets smarter with every interaction!")
+            break
+            
+        else:
+            print("❌ Invalid option. Please choose 1-8.")
+        
+        if choice not in ["7", "8"]:
+            input("\n⏸️  Press Enter to continue...")
 
 if __name__ == "__main__":
     main()
