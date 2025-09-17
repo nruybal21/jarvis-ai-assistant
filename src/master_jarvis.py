@@ -136,7 +136,7 @@ class MasterJarvisDatabase:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
-        # Enhanced tasks table with recurring task support
+        # Enhanced tasks table with time support
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS tasks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -151,6 +151,7 @@ class MasterJarvisDatabase:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 completed_at TIMESTAMP,
                 due_date TIMESTAMP,
+                due_time TEXT,
                 energy_level TEXT DEFAULT 'medium',
                 context TEXT,
                 tags TEXT,
@@ -478,26 +479,26 @@ class MasterJarvis:
         print()
     
     def show_main_menu(self):
-        """Display unified main menu"""
+        """Display streamlined main menu"""
         self.visual.print_header("MASTER JARVIS - UNIFIED CONTROL CENTER")
         
         print(f"{Fore.CYAN if VISUAL_AVAILABLE else ''}📋 TASK MANAGEMENT{Style.RESET_ALL if VISUAL_AVAILABLE else ''}")
-        self.visual.print_menu_option("1", "➕ Add Intelligent Task")
+        self.visual.print_menu_option("1", "🎯 Smart Task Manager (Add/Schedule/Recurring)")
         self.visual.print_menu_option("2", "📊 Smart Task Dashboard") 
         self.visual.print_menu_option("3", "✅ Complete Task")
-        self.visual.print_menu_option("4", "🗑️  Delete Task")
-        self.visual.print_menu_option("5", "🔄 Add Recurring Task")
+        self.visual.print_menu_option("4", "🗑️  Delete Tasks (Single/Multiple)")
+        self.visual.print_menu_option("5", "🧹 Clean Up Recurring Tasks")
         
         print(f"\n{Fore.CYAN if VISUAL_AVAILABLE else ''}🤖 AI INTELLIGENCE{Style.RESET_ALL if VISUAL_AVAILABLE else ''}")
         self.visual.print_menu_option("6", "💬 Enhanced AI Conversation")
-        self.visual.print_menu_option("7", "🎯 Natural Language Scheduling")
-        self.visual.print_menu_option("8", "📈 AI Productivity Analysis")
-        self.visual.print_menu_option("9", "☀️  Daily AI Briefing")
+        self.visual.print_menu_option("7", "📈 AI Productivity Analysis")
+        self.visual.print_menu_option("8", "☀️  Daily AI Briefing")
         
         print(f"\n{Fore.CYAN if VISUAL_AVAILABLE else ''}📅 SCHEDULE MANAGEMENT{Style.RESET_ALL if VISUAL_AVAILABLE else ''}")
-        self.visual.print_menu_option("10", "📋 Create Daily Schedule")
-        self.visual.print_menu_option("11", "💾 Save/Load Schedules")
-        self.visual.print_menu_option("12", "📤 Export Calendar")
+        self.visual.print_menu_option("9", "📋 Create Daily Schedule")
+        self.visual.print_menu_option("10", "💾 Save/Load Schedules")
+        self.visual.print_menu_option("11", "📤 Export Calendar")
+        self.visual.print_menu_option("12", "📅 Schedule Task for Specific Day")
         
         print(f"\n{Fore.CYAN if VISUAL_AVAILABLE else ''}🗓️ WEEKLY PLANNING{Style.RESET_ALL if VISUAL_AVAILABLE else ''}")
         self.visual.print_menu_option("13", "🗓️ Smart Weekly Planner")
@@ -509,7 +510,7 @@ class MasterJarvis:
         self.visual.print_menu_option("17", "⚙️  Preferences")
         self.visual.print_menu_option("0", "🚪 Exit")
         
-        print(f"\n{Fore.YELLOW if VISUAL_AVAILABLE else ''}✨ Unified AI learning active - all interactions improve your assistant!{Style.RESET_ALL if VISUAL_AVAILABLE else ''}")
+        print(f"\n{Fore.YELLOW if VISUAL_AVAILABLE else ''}✨ Streamlined AI learning - focused on your top 3 categories!{Style.RESET_ALL if VISUAL_AVAILABLE else ''}")
     
     def add_intelligent_task(self):
         """Add task with AI analysis"""
@@ -585,6 +586,532 @@ class MasterJarvis:
         print(f"\n✅ Task added successfully!")
         print(f"🆔 Task ID: {task_id}")
         print(f"🎯 Priority: {priority_level} ({priority_total}/20)")
+        
+        input("\n📱 Press Enter to continue...")
+    
+    def smart_task_manager(self):
+        """Unified task creation: regular tasks, recurring tasks, and natural language scheduling"""
+        self.visual.print_header("🎯 SMART TASK MANAGER")
+        
+        print("🚀 Welcome to your unified task creation center!")
+        print("Choose how you'd like to create tasks:")
+        
+        self.visual.print_menu_option("1", "📝 Natural Language - Just describe what you need")
+        self.visual.print_menu_option("2", "📋 Structured Entry - Fill in detailed fields") 
+        self.visual.print_menu_option("3", "🔄 Recurring Task - Repeating schedule")
+        self.visual.print_menu_option("4", "⚡ Quick Add - Title and category only")
+        
+        method = input(f"\n{Fore.GREEN if VISUAL_AVAILABLE else ''}Select method (1-4): {Style.RESET_ALL if VISUAL_AVAILABLE else ''}").strip()
+        
+        if method == '1':
+            self._natural_language_task_creation()
+        elif method == '2':
+            self._structured_task_creation()
+        elif method == '3':
+            self._recurring_task_creation()
+        elif method == '4':
+            self._quick_task_creation()
+        else:
+            print("❌ Invalid choice!")
+            input("\n📱 Press Enter to continue...")
+    
+    def _natural_language_task_creation(self):
+        """Natural language task creation with AI parsing"""
+        self.visual.print_header("📝 NATURAL LANGUAGE TASK CREATION")
+        
+        print("🗣️ Describe what you need to do in natural language:")
+        print("💡 Examples:")
+        print("   • 'Schedule team meeting for Friday at 2 PM about Q4 planning'")
+        print("   • 'Complete budget review by next Tuesday - high priority'")
+        print("   • 'Set up daily standup meetings for the next month'")
+        
+        while True:
+            user_input = input(f"\n{Fore.GREEN if VISUAL_AVAILABLE else ''}What do you need to do? {Style.RESET_ALL if VISUAL_AVAILABLE else ''}").strip()
+            
+            if not user_input:
+                print("❌ Please describe your task")
+                continue
+                
+            # AI analysis of natural language input
+            self.visual.print_ai_response("🤖 Analyzing your request...", thinking=True)
+            
+            ai_prompt = f"""
+            Parse this task request and extract structured information:
+            "{user_input}"
+            
+            Provide a JSON response with:
+            - title: clear task title
+            - description: detailed description
+            - category: admin, meetings, or personal
+            - urgency: 1-10 scale
+            - importance: 1-10 scale  
+            - estimated_time: hours (number)
+            - due_date: YYYY-MM-DD format if mentioned
+            - due_time: HH:MM format if mentioned
+            - is_recurring: true/false
+            - recurrence_pattern: daily/weekly/monthly if recurring
+            """
+            
+            ai_response = self.ai.call_claude_api(ai_prompt, "natural language task parsing")
+            
+            # Try to parse AI response as JSON
+            try:
+                import re
+                json_match = re.search(r'\{.*\}', ai_response, re.DOTALL)
+                if json_match:
+                    parsed_data = json.loads(json_match.group())
+                    
+                    print(f"\n✅ I understood:")
+                    print(f"📝 Task: {parsed_data.get('title', 'Untitled')}")
+                    print(f"📂 Category: {parsed_data.get('category', 'admin')}")
+                    print(f"🎯 Priority: {parsed_data.get('urgency', 5)}/10 urgency, {parsed_data.get('importance', 5)}/10 importance")
+                    if parsed_data.get('due_date'):
+                        print(f"📅 Due: {parsed_data.get('due_date')}" + (f" at {parsed_data.get('due_time')}" if parsed_data.get('due_time') else ""))
+                    if parsed_data.get('estimated_time'):
+                        print(f"⏱️ Estimated: {parsed_data.get('estimated_time')} hours")
+                    
+                    confirm = input(f"\n✅ Create this task? (y/n): ").strip().lower()
+                    if confirm == 'y':
+                        self._create_task_from_parsed_data(parsed_data)
+                        
+                else:
+                    # Fallback to manual entry if AI parsing fails
+                    print("🤖 I'll help you create this task step by step.")
+                    self._create_task_manually(user_input)
+                    
+            except (json.JSONDecodeError, KeyError):
+                # Fallback to manual entry
+                print("🤖 Let me help you create this task:")
+                self._create_task_manually(user_input)
+            
+            # Ask if they want to add another
+            another = input("\n📝 Add another task? (y/n): ").strip().lower()
+            if another != 'y':
+                break
+    
+    def _create_task_from_parsed_data(self, data):
+        """Create task from AI-parsed data"""
+        task_id = self.db.add_task(
+            title=data.get('title', 'Untitled Task'),
+            description=data.get('description', ''),
+            urgency=min(10, max(1, data.get('urgency', 5))),
+            importance=min(10, max(1, data.get('importance', 5))),
+            estimated_time=data.get('estimated_time'),
+            category=data.get('category', 'admin'),
+            due_date=data.get('due_date')
+        )
+        
+        # Add time if specified
+        if data.get('due_time'):
+            conn = sqlite3.connect(self.db.db_path)
+            cursor = conn.cursor()
+            cursor.execute('UPDATE tasks SET due_time = ? WHERE id = ?', (data.get('due_time'), task_id))
+            conn.commit()
+            conn.close()
+        
+        print(f"✅ Task created! ID: {task_id}")
+    
+    def _create_task_manually(self, user_input):
+        """Manual task creation fallback"""
+        title = input(f"📝 Task title: ").strip() or user_input[:50]
+        
+        print(f"\n📂 Category:")
+        self.visual.print_menu_option("1", "📋 Admin")
+        self.visual.print_menu_option("2", "👥 Meetings") 
+        self.visual.print_menu_option("3", "🏠 Personal")
+        
+        cat_choice = input("Select category (1-3): ").strip()
+        categories = {'1': 'admin', '2': 'meetings', '3': 'personal'}
+        category = categories.get(cat_choice, 'admin')
+        
+        urgency = int(input("⚡ Urgency (1-10): ") or "5")
+        importance = int(input("🎯 Importance (1-10): ") or "5")
+        
+        task_id = self.db.add_task(
+            title=title,
+            description=user_input,
+            urgency=urgency,
+            importance=importance,
+            category=category
+        )
+        
+        print(f"✅ Task created manually! ID: {task_id}")
+    
+    def _structured_task_creation(self):
+        """Structured task entry with all fields"""
+        self.visual.print_header("📋 STRUCTURED TASK CREATION")
+        
+        while True:
+            title = input("📝 Task title: ").strip()
+            if not title:
+                print("❌ Task title cannot be empty!")
+                continue
+            
+            description = input("📋 Task description (optional): ").strip()
+            
+            # AI analysis
+            self.visual.print_ai_response("Analyzing your task...", thinking=True)
+            ai_analysis = self.ai.analyze_task(title, description)
+            self.visual.print_ai_response(ai_analysis)
+            
+            # Streamlined category selection
+            print(f"\n📂 Task Category:")
+            self.visual.print_menu_option("1", "📋 Admin")
+            self.visual.print_menu_option("2", "👥 Meetings") 
+            self.visual.print_menu_option("3", "🏠 Personal")
+            
+            cat_choice = input("Select category (1-3): ").strip()
+            categories = {'1': 'admin', '2': 'meetings', '3': 'personal'}
+            category = categories.get(cat_choice, 'admin')
+            
+            # Priority assessment
+            print(f"\n🎯 Priority Assessment (1-10 scale):")
+            try:
+                urgency = int(input("⚡ Urgency (1-10): ") or "5")
+                importance = int(input("🎯 Importance (1-10): ") or "5") 
+                estimated_time = float(input("⏱️ Estimated hours: ") or "0") or None
+            except ValueError:
+                urgency, importance, estimated_time = 5, 5, None
+            
+            # Deadline and time
+            due_date, due_time = self._get_deadline_and_time(category)
+            
+            # Create task
+            task_id = self.db.add_task(
+                title=title,
+                description=description,
+                urgency=urgency,
+                importance=importance,
+                estimated_time=estimated_time,
+                category=category,
+                due_date=due_date
+            )
+            
+            # Add time if specified
+            if due_time:
+                conn = sqlite3.connect(self.db.db_path)
+                cursor = conn.cursor()
+                cursor.execute('UPDATE tasks SET due_time = ? WHERE id = ?', (due_time, task_id))
+                conn.commit()
+                conn.close()
+            
+            priority_total = urgency + importance
+            priority_level = "🔥 HIGH" if priority_total >= 16 else "🟡 MEDIUM" if priority_total >= 12 else "🟢 LOW"
+            
+            print(f"\n✅ Task created successfully!")
+            print(f"🆔 Task ID: {task_id}")
+            print(f"🎯 Priority: {priority_level} ({priority_total}/20)")
+            if due_date:
+                print(f"📅 Due: {due_date}" + (f" at {due_time}" if due_time else ""))
+            
+            another = input("\n📝 Add another task? (y/n): ").strip().lower()
+            if another != 'y':
+                break
+    
+    def _get_deadline_and_time(self, category):
+        """Get deadline and time, with special handling for meetings"""
+        due_date_input = input("📅 Deadline (YYYY-MM-DD) or 'none': ").strip()
+        due_date = None
+        due_time = None
+        
+        if due_date_input.lower() not in ['none', 'n', '']:
+            try:
+                due_date = datetime.strptime(due_date_input, "%Y-%m-%d").strftime("%Y-%m-%d")
+                
+                # For meetings, always ask for time
+                if category == 'meetings':
+                    due_time = input("🕒 Meeting time (HH:MM, e.g., 14:30): ").strip()
+                    if due_time and ':' not in due_time:
+                        due_time = None  # Invalid format
+                else:
+                    # For other categories, time is optional
+                    due_time = input("🕒 Specific time (optional, HH:MM): ").strip() or None
+                    
+            except ValueError:
+                print("⚠️ Invalid date format, no deadline set")
+        
+        return due_date, due_time
+    
+    def delete_tasks(self):
+        """Delete single or multiple tasks"""
+        self.visual.print_header("🗑️ DELETE TASKS")
+        
+        pending_tasks = self.db.get_tasks('pending', limit=20)
+        
+        if not pending_tasks:
+            print("📋 No pending tasks to delete!")
+            input("\n📱 Press Enter to continue...")
+            return
+        
+        print("🗑️ Delete Options:")
+        self.visual.print_menu_option("1", "🗑️ Delete single task")
+        self.visual.print_menu_option("2", "🔥 Delete multiple tasks")
+        self.visual.print_menu_option("3", "💥 Delete all completed tasks")
+        
+        method = input(f"\n{Fore.GREEN if VISUAL_AVAILABLE else ''}Select method (1-3): {Style.RESET_ALL if VISUAL_AVAILABLE else ''}").strip()
+        
+        if method == '1':
+            self._delete_single_task(pending_tasks)
+        elif method == '2':
+            self._delete_multiple_tasks(pending_tasks)
+        elif method == '3':
+            self._delete_completed_tasks()
+        else:
+            print("❌ Invalid choice!")
+        
+        input("\n📱 Press Enter to continue...")
+    
+    def _delete_single_task(self, tasks):
+        """Delete single task"""
+        print("📋 Your pending tasks:")
+        for i, task in enumerate(tasks, 1):
+            print(f"  {i}. {task[1]} (ID: {task[0]})")
+        
+        try:
+            choice = int(input("\n🔢 Enter task number to delete: ")) - 1
+            if 0 <= choice < len(tasks):
+                task = tasks[choice]
+                task_id, title = task[0], task[1]
+                
+                confirm = input(f"⚠️ Really delete '{title}'? (y/n): ").strip().lower()
+                if confirm == 'y':
+                    conn = sqlite3.connect(self.db.db_path)
+                    cursor = conn.cursor()
+                    cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+                    conn.commit()
+                    conn.close()
+                    print("✅ Task deleted successfully!")
+            else:
+                print("❌ Invalid task number!")
+        except ValueError:
+            print("❌ Please enter a valid number!")
+    
+    def _delete_multiple_tasks(self, tasks):
+        """Delete multiple tasks at once"""
+        print("📋 Your pending tasks:")
+        for i, task in enumerate(tasks, 1):
+            priority_total = (task[3] or 5) + (task[4] or 5)  # urgency + importance
+            priority_icon = "🔥" if priority_total >= 16 else "🟡" if priority_total >= 12 else "🟢"
+            print(f"  {i}. {priority_icon} {task[1]} (ID: {task[0]})")
+        
+        print(f"\n💡 Enter task numbers to delete:")
+        print(f"Examples: '1,3,5' or '1-5' or '1,3,7-10'")
+        
+        selection = input("📝 Task numbers to delete: ").strip()
+        
+        if not selection:
+            print("❌ No tasks selected!")
+            return
+        
+        # Parse selection
+        task_indices = self._parse_task_selection(selection, len(tasks))
+        
+        if not task_indices:
+            print("❌ Invalid selection format!")
+            return
+        
+        # Show selected tasks
+        selected_tasks = [tasks[i-1] for i in task_indices if 1 <= i <= len(tasks)]
+        
+        print(f"\n⚠️ You selected {len(selected_tasks)} tasks for deletion:")
+        for task in selected_tasks:
+            print(f"  • {task[1]} (ID: {task[0]})")
+        
+        confirm = input(f"\n⚠️ Delete all {len(selected_tasks)} selected tasks? (y/n): ").strip().lower()
+        
+        if confirm == 'y':
+            conn = sqlite3.connect(self.db.db_path)
+            cursor = conn.cursor()
+            
+            task_ids = [task[0] for task in selected_tasks]
+            placeholders = ','.join(['?' for _ in task_ids])
+            cursor.execute(f"DELETE FROM tasks WHERE id IN ({placeholders})", task_ids)
+            
+            deleted_count = cursor.rowcount
+            conn.commit()
+            conn.close()
+            
+            print(f"✅ Successfully deleted {deleted_count} tasks!")
+        else:
+            print("❌ Deletion cancelled.")
+    
+    def _parse_task_selection(self, selection, max_tasks):
+        """Parse user selection like '1,3,5' or '1-5' or '1,3,7-10'"""
+        indices = set()
+        
+        try:
+            parts = selection.split(',')
+            for part in parts:
+                part = part.strip()
+                if '-' in part:
+                    # Range like '1-5'
+                    start, end = map(int, part.split('-'))
+                    indices.update(range(start, end + 1))
+                else:
+                    # Single number like '3'
+                    indices.add(int(part))
+            
+            # Filter valid indices
+            return [i for i in indices if 1 <= i <= max_tasks]
+            
+        except ValueError:
+            return []
+    
+    def _delete_completed_tasks(self):
+        """Delete all completed tasks"""
+        conn = sqlite3.connect(self.db.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT COUNT(*) FROM tasks WHERE status = 'completed'")
+        completed_count = cursor.fetchone()[0]
+        
+        if completed_count == 0:
+            print("📋 No completed tasks to delete!")
+            conn.close()
+            return
+        
+        confirm = input(f"⚠️ Delete all {completed_count} completed tasks? (y/n): ").strip().lower()
+        
+        if confirm == 'y':
+            cursor.execute("DELETE FROM tasks WHERE status = 'completed'")
+            deleted_count = cursor.rowcount
+            conn.commit()
+            print(f"✅ Deleted {deleted_count} completed tasks!")
+        else:
+            print("❌ Deletion cancelled.")
+        
+        conn.close()
+    
+    def cleanup_recurring_tasks(self):
+        """Clean up excessive recurring task instances"""
+        self.visual.print_header("🧹 CLEAN UP RECURRING TASKS")
+        
+        conn = sqlite3.connect(self.db.db_path)
+        cursor = conn.cursor()
+        
+        # Find recurring task patterns
+        cursor.execute('''
+            SELECT title, COUNT(*) as count
+            FROM tasks 
+            WHERE status = 'pending'
+            AND title NOT LIKE '[RECURRING]%'
+            GROUP BY title
+            HAVING count > 5
+            ORDER BY count DESC
+        ''')
+        
+        recurring_patterns = cursor.fetchall()
+        
+        if not recurring_patterns:
+            print("✅ No excessive recurring tasks found!")
+            input("\n📱 Press Enter to continue...")
+            return
+        
+        print("🔍 Found these excessive recurring tasks:")
+        for i, (title, count) in enumerate(recurring_patterns, 1):
+            print(f"  {i}. '{title}' - {count} instances")
+        
+        print(f"\n⚠️ Options:")
+        self.visual.print_menu_option("1", "Delete ALL excessive recurring instances")
+        self.visual.print_menu_option("2", "Keep only next 7 days worth")
+        self.visual.print_menu_option("3", "Keep only next 3 occurrences")
+        self.visual.print_menu_option("4", "Manual cleanup by task type")
+        
+        choice = input(f"\n{Fore.GREEN if VISUAL_AVAILABLE else ''}Select cleanup option (1-4): {Style.RESET_ALL if VISUAL_AVAILABLE else ''}").strip()
+        
+        if choice == '1':
+            # Delete all recurring instances, keep only parent tasks
+            cursor.execute('''
+                DELETE FROM tasks 
+                WHERE status = 'pending' 
+                AND title NOT LIKE '[RECURRING]%'
+                AND title IN (
+                    SELECT title FROM tasks 
+                    WHERE status = 'pending' 
+                    GROUP BY title 
+                    HAVING COUNT(*) > 5
+                )
+            ''')
+            
+            deleted = cursor.rowcount
+            print(f"🗑️ Deleted {deleted} excessive recurring task instances")
+            
+        elif choice == '2':
+            # Keep only next 7 days worth
+            today = datetime.now().date()
+            week_from_now = today + timedelta(days=7)
+            
+            for title, count in recurring_patterns:
+                cursor.execute('''
+                    DELETE FROM tasks 
+                    WHERE status = 'pending' 
+                    AND title = ?
+                    AND (due_date IS NULL OR due_date > ?)
+                ''', (title, week_from_now.strftime("%Y-%m-%d")))
+            
+            deleted = cursor.rowcount
+            print(f"🗑️ Kept only next 7 days worth, deleted {deleted} future instances")
+            
+        elif choice == '3':
+            # Keep only next 3 occurrences
+            for title, count in recurring_patterns:
+                cursor.execute('''
+                    DELETE FROM tasks 
+                    WHERE id NOT IN (
+                        SELECT id FROM tasks 
+                        WHERE status = 'pending' 
+                        AND title = ?
+                        ORDER BY due_date ASC, created_at ASC
+                        LIMIT 3
+                    )
+                    AND status = 'pending'
+                    AND title = ?
+                ''', (title, title))
+            
+            deleted = cursor.rowcount
+            print(f"🗑️ Kept only next 3 occurrences per task, deleted {deleted} instances")
+            
+        elif choice == '4':
+            # Manual cleanup
+            for i, (title, count) in enumerate(recurring_patterns, 1):
+                keep = input(f"How many instances of '{title}' to keep? (current: {count}): ").strip()
+                try:
+                    keep_count = int(keep)
+                    if keep_count < count:
+                        cursor.execute('''
+                            DELETE FROM tasks 
+                            WHERE id NOT IN (
+                                SELECT id FROM tasks 
+                                WHERE status = 'pending' 
+                                AND title = ?
+                                ORDER BY due_date ASC, created_at ASC
+                                LIMIT ?
+                            )
+                            AND status = 'pending'
+                            AND title = ?
+                        ''', (title, keep_count, title))
+                        
+                        print(f"🗑️ Kept {keep_count} instances of '{title}'")
+                except ValueError:
+                    print(f"⚠️ Skipped '{title}' - invalid number")
+        
+        else:
+            print("❌ Invalid choice!")
+            conn.close()
+            input("\n📱 Press Enter to continue...")
+            return
+        
+        conn.commit()
+        
+        # Show final count
+        cursor.execute("SELECT COUNT(*) FROM tasks WHERE status = 'pending'")
+        final_count = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        print(f"✅ Cleanup complete!")
+        print(f"📊 You now have {final_count} pending tasks")
+        print(f"💡 Use Option 2 (Smart Task Dashboard) to verify the cleanup")
         
         input("\n📱 Press Enter to continue...")
     
@@ -760,6 +1287,137 @@ class MasterJarvis:
                     current_date = current_date.replace(month=current_date.month + 1)
         
         return len(instances)
+    
+    def schedule_task_specific_day(self):
+        """Schedule existing tasks for specific days of the week"""
+        self.visual.print_header("📅 SCHEDULE TASK FOR SPECIFIC DAY")
+        
+        # Get pending tasks
+        tasks = self.db.get_tasks('pending', limit=20)
+        
+        if not tasks:
+            print("📋 No pending tasks to schedule!")
+            print("💡 Add tasks first using Option 1.")
+            input("\n📱 Press Enter to continue...")
+            return
+        
+        print("📋 Your pending tasks:")
+        for i, task in enumerate(tasks, 1):
+            task_id, title, description, urgency, importance, est_time, actual_time, category, status, created_at, completed_at, due_date, energy_level, context, tags, priority_total = task
+            
+            priority_level = "🔥" if priority_total >= 16 else "🟡" if priority_total >= 12 else "🟢"
+            time_str = f"⏱️ {est_time}h" if est_time else "⏱️ No estimate"
+            
+            print(f"  {i}. {priority_level} {title}")
+            print(f"      🆔 ID: {task_id} | {time_str} | 📂 {category}")
+        
+        # Select task to schedule
+        try:
+            task_choice = int(input(f"\n🔢 Select task number to schedule: ")) - 1
+            if not (0 <= task_choice < len(tasks)):
+                print("❌ Invalid task number!")
+                input("\n📱 Press Enter to continue...")
+                return
+            
+            selected_task = tasks[task_choice]
+            task_id, title = selected_task[0], selected_task[1]
+            
+            print(f"\n✅ Selected: {title}")
+            
+            # Select specific day
+            print(f"\n📅 Select specific day:")
+            self.visual.print_menu_option("1", "Monday")
+            self.visual.print_menu_option("2", "Tuesday") 
+            self.visual.print_menu_option("3", "Wednesday")
+            self.visual.print_menu_option("4", "Thursday")
+            self.visual.print_menu_option("5", "Friday")
+            self.visual.print_menu_option("6", "Saturday")
+            self.visual.print_menu_option("7", "Sunday")
+            
+            day_choice = input(f"\n{Fore.GREEN if VISUAL_AVAILABLE else ''}Select day (1-7): {Style.RESET_ALL if VISUAL_AVAILABLE else ''}").strip()
+            
+            days = {
+                '1': 'Monday',
+                '2': 'Tuesday', 
+                '3': 'Wednesday',
+                '4': 'Thursday',
+                '5': 'Friday',
+                '6': 'Saturday',
+                '7': 'Sunday'
+            }
+            
+            if day_choice not in days:
+                print("❌ Invalid day selection!")
+                input("\n📱 Press Enter to continue...")
+                return
+            
+            selected_day = days[day_choice]
+            
+            # Select specific date or next occurrence
+            print(f"\n🗓️ Schedule for {selected_day}:")
+            self.visual.print_menu_option("1", f"Next {selected_day}")
+            self.visual.print_menu_option("2", f"Specific date")
+            
+            date_choice = input(f"\n{Fore.GREEN if VISUAL_AVAILABLE else ''}Choose option (1-2): {Style.RESET_ALL if VISUAL_AVAILABLE else ''}").strip()
+            
+            target_date = None
+            
+            if date_choice == '1':
+                # Find next occurrence of selected day
+                today = datetime.now()
+                days_ahead = list(days.keys()).index(day_choice) - today.weekday()
+                if days_ahead <= 0:  # Target day already happened this week
+                    days_ahead += 7
+                target_date = (today + timedelta(days=days_ahead)).strftime("%Y-%m-%d")
+                
+            elif date_choice == '2':
+                # Get specific date
+                date_input = input("📅 Enter specific date (YYYY-MM-DD): ").strip()
+                try:
+                    datetime.strptime(date_input, "%Y-%m-%d")
+                    target_date = date_input
+                except ValueError:
+                    print("❌ Invalid date format!")
+                    input("\n📱 Press Enter to continue...")
+                    return
+            else:
+                print("❌ Invalid choice!")
+                input("\n📱 Press Enter to continue...")
+                return
+            
+            # Get time slot (optional)
+            time_slot = input("🕒 Preferred time (e.g., '9:00 AM' or press Enter to skip): ").strip()
+            
+            # Update task with scheduled date
+            conn = sqlite3.connect(self.db.db_path)
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE tasks 
+                SET due_date = ?, 
+                    context = COALESCE(context, '') || ? 
+                WHERE id = ?
+            ''', (target_date, f" | Scheduled: {selected_day} {target_date}" + (f" at {time_slot}" if time_slot else ""), task_id))
+            conn.commit()
+            conn.close()
+            
+            # AI scheduling advice
+            self.visual.print_ai_response("Analyzing optimal scheduling for this task...", thinking=True)
+            schedule_prompt = f"I scheduled '{title}' for {selected_day}, {target_date}" + (f" at {time_slot}" if time_slot else "") + ". Any scheduling optimization advice?"
+            ai_advice = self.ai.call_claude_api(schedule_prompt, "specific day scheduling")
+            self.visual.print_ai_response(ai_advice)
+            
+            print(f"\n✅ Task scheduled successfully!")
+            print(f"📅 {title}")
+            print(f"🗓️ Scheduled for: {selected_day}, {target_date}")
+            if time_slot:
+                print(f"🕒 Time: {time_slot}")
+            
+        except ValueError:
+            print("❌ Please enter a valid number!")
+        except Exception as e:
+            print(f"❌ Error scheduling task: {str(e)}")
+        
+        input("\n📱 Press Enter to continue...")
     
     def _calculate_days_until_due(self, due_date, start_date):
         """Calculate days between start_date and due_date"""
@@ -995,36 +1653,70 @@ class MasterJarvis:
         """Complete a task with time tracking"""
         self.visual.print_header("✅ COMPLETE TASK")
         
-        pending_tasks = self.db.get_tasks('pending', limit=10)
+        # Get ALL pending tasks, including recurring instances - simplified query
+        conn = sqlite3.connect(self.db.db_path)
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT id, title, description, urgency_score, importance_score, 
+                   estimated_time, actual_time, category, status, created_at,
+                   completed_at, due_date, energy_level, context, tags
+            FROM tasks 
+            WHERE status = 'pending' 
+            ORDER BY created_at ASC
+        ''')
+        pending_tasks = cursor.fetchall()
+        conn.close()
         
         if not pending_tasks:
             print("🎉 No pending tasks to complete!")
             input("\n📱 Press Enter to continue...")
             return
         
-        print("📋 Your pending tasks:")
+        print(f"📋 Your pending tasks ({len(pending_tasks)} total):")
         for i, task in enumerate(pending_tasks, 1):
-            print(f"  {i}. {task[1]} (ID: {task[0]})")
+            task_id = task[0]
+            title = task[1] 
+            due_date = task[11]
+            
+            # Add deadline info
+            deadline_info = ""
+            if due_date:
+                try:
+                    due = datetime.strptime(due_date, "%Y-%m-%d")
+                    today = datetime.now()
+                    days_diff = (due - today).days
+                    
+                    if days_diff < 0:
+                        deadline_info = f" 🚨 OVERDUE"
+                    elif days_diff == 0:
+                        deadline_info = f" ⏰ DUE TODAY"
+                    elif days_diff <= 3:
+                        deadline_info = f" 📅 Due in {days_diff} days"
+                except ValueError:
+                    deadline_info = f" 📅 Due {due_date}"
+            
+            print(f"  {i}. {title} (ID: {task_id}){deadline_info}")
         
         try:
             choice = int(input("\n🔢 Enter task number to complete: ")) - 1
             if 0 <= choice < len(pending_tasks):
                 task = pending_tasks[choice]
                 task_id = task[0]
+                title = task[1]
                 estimated_time = task[5]
                 
-                print(f"\n✅ Completing: {task[1]}")
+                print(f"\n✅ Completing: {title}")
                 
                 if estimated_time:
-                    actual_time = input(f"⏱️  Actual time spent? (estimated: {estimated_time}h): ").strip()
+                    actual_time_input = input(f"⏱️  Actual time spent? (estimated: {estimated_time}h): ").strip()
                     try:
-                        actual_time = float(actual_time) if actual_time else None
+                        actual_time = float(actual_time_input) if actual_time_input else None
                     except ValueError:
                         actual_time = None
                 else:
-                    actual_time = input("⏱️  How long did this take? (hours): ").strip()
+                    actual_time_input = input("⏱️  How long did this take? (hours): ").strip()
                     try:
-                        actual_time = float(actual_time) if actual_time else None
+                        actual_time = float(actual_time_input) if actual_time_input else None
                     except ValueError:
                         actual_time = None
                 
@@ -1036,7 +1728,7 @@ class MasterJarvis:
                 if estimated_time and actual_time:
                     difference = abs(estimated_time - actual_time)
                     if difference > 0.5:  # If off by more than 30 minutes
-                        learning_prompt = f"I estimated {estimated_time}h for '{task[1]}' but it took {actual_time}h. What can I learn for better estimates?"
+                        learning_prompt = f"I estimated {estimated_time}h for '{title}' but it took {actual_time}h. What can I learn for better estimates?"
                         self.visual.print_ai_response("Learning from this completion...", thinking=True)
                         ai_learning = self.ai.call_claude_api(learning_prompt, "task completion learning")
                         self.visual.print_ai_response(ai_learning)
@@ -1063,29 +1755,29 @@ class MasterJarvis:
                         self.visual.print_animated_text("👋 Thank you for using Master Jarvis! Your AI learns from every interaction.", color='blue')
                         break
                     elif choice == '1':
-                        self.add_intelligent_task()
+                        self.smart_task_manager()
                     elif choice == '2':
                         self.show_smart_dashboard()
                     elif choice == '3':
                         self.complete_task()
                     elif choice == '4':
-                        self.delete_task()
+                        self.delete_tasks()
                     elif choice == '5':
-                        self.add_recurring_task()
+                        self.cleanup_recurring_tasks()
                     elif choice == '6':
                         self.enhanced_ai_conversation()
                     elif choice == '7':
-                        self.natural_language_scheduling()
-                    elif choice == '8':
                         self.ai_productivity_analysis()
-                    elif choice == '9':
+                    elif choice == '8':
                         self.daily_ai_briefing()
-                    elif choice == '10':
+                    elif choice == '9':
                         self.create_daily_schedule()
-                    elif choice == '11':
+                    elif choice == '10':
                         self.manage_saved_schedules()
-                    elif choice == '12':
+                    elif choice == '11':
                         self.export_calendar()
+                    elif choice == '12':
+                        self.schedule_task_specific_day()
                     elif choice == '13':
                         self.smart_weekly_planner()
                     elif choice == '14':
